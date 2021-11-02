@@ -23,13 +23,6 @@ public class RowByVectorMultiplicationThread extends Thread{
                 "endRow needs to be Matrix.Length - 1 or less"
         );
 
-//        // ενας τυπικος ελεγχος για τον αλγοριθμο πολλαπλασιασμου πινακων,
-//        // το διανυσμα πρεπει να εχει ιδιο μηκος με τις γραμμες του πινακα
-//        if (vector.length != matrix.length) {
-//            throw new Exception( "Matrix size is different than Vector size." +
-//                        "\nMultiplication is not possible. Check your inputs!");
-//        }
-
         this.matrix = matrix;
         this.vector = vector;
         this.startRow = startRow;

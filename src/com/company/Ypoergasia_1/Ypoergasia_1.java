@@ -8,6 +8,7 @@ public class Ypoergasia_1 {
         int[][] matrix;
         int[] vector;
         int n , m;
+        long[] totalTimes = new long[4];
         int[] result;
 
         if (args.length == 0){
@@ -44,7 +45,7 @@ public class Ypoergasia_1 {
             hi = matrix.length / THREADCOUNT;
             for (int j = 0; j < THREADCOUNT; j++){
                 // δημιουργια των Thread
-                ts[j] = new RowByVectorMultiplicationThread("Thread" + i, matrix, vector, lo, hi);
+                ts[j] = new RowByVectorMultiplicationThread("Thread" + (j + 1), matrix, vector, lo, hi);
                 // εκκινηση λειτουργιας του Thread
                 ts[j].start();
 
@@ -72,16 +73,18 @@ public class Ypoergasia_1 {
                     result = arrayConcat(arrs[0], arrs[1]);
                     break;
                 case 4:
-                    result = arrayConcat(arrs[0], arrs[1], arrs[2], arrs[3]);
-                    break;
                 case 8:
                     result = arrayConcat(arrs);
                     break;
                 default:
                     throw new Exception("Default case in switch() reached. Something went wrong somehow.");
             }
+            totalTimes[i] = (System.nanoTime() - startTime);
+        }
 
-            System.out.println("Number of threads: " +THREADCOUNT+". Elapsed time after putting together results in nanoseconds: " + (System.nanoTime() - startTime));
+        // εκτυπωση τελικων χρονων
+        for (int i = 0; i < 4; i++){
+            System.out.println("Number of threads: " + (int) Math.pow(2,i) +". Elapsed time after putting together results in nanoseconds: " + totalTimes[i]);
         }
     }
 
@@ -146,17 +149,18 @@ public class Ypoergasia_1 {
     }
 
     // ενωνει 4 πινακες Overloaded method
-    public static int[] arrayConcat(int[] arr1, int[] arr2, int[] arr3, int[] arr4) throws Exception {
-        int[] arr12 = arrayConcat(arr1, arr2);
-        int[] arr34 = arrayConcat(arr3, arr4);
-        return arrayConcat(arr12, arr34);
+    public static int[] arrayConcat(int[][] arr) throws Exception {
+        if (arr.length == 4) {
+            int[] arr12 = arrayConcat(arr[0], arr[1]);
+            int[] arr34 = arrayConcat(arr[2], arr[3]);
+            return arrayConcat(arr12, arr34);
+        }
+        else if (arr.length == 8) {
+            int[] arr1234 = arrayConcat(new int[][]{arr[0], arr[1], arr[2], arr[3]});
+            int[] arr5678 = arrayConcat(new int[][]{arr[4], arr[5], arr[6], arr[7]});
+            return arrayConcat(arr1234, arr5678);
+        }
+        throw new Exception("Wrong size of int[][].");
     }
 
-    // ενωνει 8 πινακες Overloaded method
-    public static int[] arrayConcat(int[][] arr) throws Exception {
-        if (arr.length != 8) throw new Exception("Wrong int[][] arr size. Needs to be 8.");
-        int[] arr1234 = arrayConcat(arr[0], arr[1], arr[2], arr[3]);
-        int[] arr5678 = arrayConcat(arr[4], arr[5], arr[6], arr[7]);
-        return arrayConcat(arr1234, arr5678);
-    }
 }

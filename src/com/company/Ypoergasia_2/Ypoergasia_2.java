@@ -12,11 +12,55 @@ public class Ypoergasia_2 {
         //parsing a CSV file into Scanner class constructor
 
         // csv data as list of lists
-        List<List<String>> simpsonsScriptLines = Ypoergasia_2.simpsonsScriptLines("\\externalFiles\\simpsons_script_lines.csv");
-        System.out.println("Loaded " + simpsonsScriptLines.size() + " lines");
+        List<List<String>> lines = Ypoergasia_2.simpsonsScriptLines("\\externalFiles\\simpsons_script_lines.csv");
+        System.out.println("Loaded " + lines.size() + " lines");
+
+        int THREADCOUNT; // αριθμος των THREAD
+        int batchSize;
+        int start;
+        int end;
+
+        // for loop για τις 4 περιπτωσεις χρησης Thread, 1,2,4,8
+        for (int i = 0; i < 4; i++) {
+            THREADCOUNT = (int) Math.pow(2,i);  // 1, 2, 4, 8
+
+            batchSize = lines.size() / THREADCOUNT;
+            start = 0;
+            end = batchSize;
+            ProcessThread[] ts = new ProcessThread[THREADCOUNT];
+            // inner loop δημιουργια και εκκινηση των Thread
+            for (int j = 0; j < THREADCOUNT; j++){
+                // Check whether the last batch should be extended to process the lines left (case of division with remainder).
+                if (j == THREADCOUNT - 1 && end < lines.size()){
+                    end = lines.size();
+                }
+                // δημιουργια του Thread
+                ts[j] = new ProcessThread(lines.subList(start, end));
+                // εκκινηση λειτουργιας του Thread
+                ts[j].start();
+
+                // επαναπροσδιορισμος οριων λιστας για το επομενο thread
+                start = end;
+                end += batchSize;
+            }
+
+            // wait for all threads to finish
+            for (int j = 0; j < THREADCOUNT; j++) {
+                try {
+                    ts[j].join();
+                }
+                catch (InterruptedException e){
+                    e.printStackTrace();
+                }
+            }
+
+
+
+        }
+
 
         // OΝΕ Thread
-        ProcessThread thread = new ProcessThread(simpsonsScriptLines);
+        ProcessThread thread = new ProcessThread(lines);
         thread.start();
         thread.join();
 
