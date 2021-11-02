@@ -1,8 +1,6 @@
 package com.company.Ypoergasia_1;
 
-import java.util.Arrays;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 public class Ypoergasia_1 {
     //  ΠΑΡΑΔΟΧΗ  n, m, k δυναμεις του 2, (ΟΔΗΓΙΑ ΣΕΠ => δεν χρειαζεται αμυντικος προγραμματισμος)
@@ -10,14 +8,14 @@ public class Ypoergasia_1 {
         int[][] matrix;
         int[] vector;
         int n , m;
+        int[] result;
 
         if (args.length == 0){
             // εαν δεν υπαρχουν εισερχομενα δεδομενα δινουμε μια τυχαια δυναμη του 2 απο [12,14]
-            // στις διαστασει του πινακα και του διανυσματος
+            // στις διαστασεις του πινακα και του διανυσματος
             Random rand = new Random();
             n = rand.nextInt(3) + 12;
             m = rand.nextInt(3) + 12;
-
         }
         else {
             // αλλιως οτι τιμες εισαγει στο προγραμμα ο χρηστης
@@ -28,126 +26,63 @@ public class Ypoergasia_1 {
         // δημιουργια του τυχαιου πινακα και διανυσματος
         vector = Ypoergasia_1.getVector((int) Math.pow(2, m));
         matrix = Ypoergasia_1.getMatrix((int) Math.pow(2, n), (int) Math.pow(2, m));
+        // βοηθητικες μεταβλητες
+        int[][] arrs; // κραταει τα αποτελεσματα απο καθε Thread και χρησιμοποιειται για τη συνενωση τους
+        int THREADCOUNT; // αριθμος των THREAD
+        // καθε Thread υπολογιζει απο lo εως hi στοιχειο του συνολικου αποτελεσματος
+        int lo; //
+        int hi; //
 
-        // αποθηκευση τιμων χρονου
-        long[] times = new long[8];
+        // 4 επαναληψεις μια για καθε περιπτωση αριθμων Threads 1,2,4,8
+        for (int i = 0; i < 4; i++){
+            long startTime = System.nanoTime();
+            THREADCOUNT = (int) Math.pow(2,i);  // 1, 2, 4, 8
+            RowByVectorMultiplicationThread[] ts = new RowByVectorMultiplicationThread[THREADCOUNT]; // αρχικοποιηση πινακα RowByVectorMultiplicationThread
 
-        // υπολογισμος με 1 THREAD
-        times[0] = System.nanoTime();
-        int[] result1 = oneThreadMult(matrix, vector, 0, matrix.length);
-        times[1] = System.nanoTime();
+            // βο
+            lo = 0;
+            hi = matrix.length / THREADCOUNT;
+            for (int j = 0; j < THREADCOUNT; j++){
+                // δημιουργια των Thread
+                ts[j] = new RowByVectorMultiplicationThread("Thread" + i, matrix, vector, lo, hi);
+                // εκκινηση λειτουργιας του Thread
+                ts[j].start();
 
-        // υπολογισμος με 2 THREAD
-        times[2] = System.nanoTime();
-        int[] result2 = twoThreadMult(matrix, vector, 0, matrix.length);
-        times[3] = System.nanoTime();
-
-        // υπολογισμος με 3 THREAD
-        times[4] = System.nanoTime();
-        int[] result3 = fourThreadMult(matrix, vector, 0, matrix.length);
-        times[5] = System.nanoTime();
-
-        // υπολογισμος με 4 THREAD
-        times[6] = System.nanoTime();
-        int[] result4 = eightThreadMult(matrix, vector, 0, matrix.length);
-        times[7] = System.nanoTime();
-
-        // ελεγχος ισοτητας αποτελεσματων
-        if (Ypoergasia_1.equalityCheck(result1, result2, result3, result4)) {
-            for (int i = 0; i < times.length; i+=2) {
-                System.out.println("Total Execution time with " + (int) Math.pow(2,i/2) + " Threads = "  + (times[i + 1] - times[i]));
+                // επαναπροσδιορισμος ευρους υπολογισμου για το επομενο thread
+                lo = hi;
+                hi += matrix.length / THREADCOUNT;
             }
-            System.out.println("Matrix size = " + matrix.length + ", " + matrix[0].length);
-            System.out.println("Vector size = " + vector.length);
+
+            // αρχικοποιηση πινακα πινακων
+            arrs = new int[THREADCOUNT][];
+
+            // wait for all threads to finish
+            for (int j = 0; j < THREADCOUNT; j++) {
+                ts[j].join();
+                // αποθηκευουμε το αποτελεσμα απο καθε thread στον πινακα arrs
+                arrs[j] = ts[j].getResultVector();
+            }
+
+            // αναλογα με τον αριθμο των Thread, γινεται και η καταλληλη συνενωση των αποτελεσματων σε 1 τελικο αποτελεσμα result
+            switch (THREADCOUNT){
+                case 1:
+                    result = arrs[0];
+                    break;
+                case 2:
+                    result = arrayConcat(arrs[0], arrs[1]);
+                    break;
+                case 4:
+                    result = arrayConcat(arrs[0], arrs[1], arrs[2], arrs[3]);
+                    break;
+                case 8:
+                    result = arrayConcat(arrs);
+                    break;
+                default:
+                    throw new Exception("Default case in switch() reached. Something went wrong somehow.");
+            }
+
+            System.out.println("Number of threads: " +THREADCOUNT+". Elapsed time after putting together results in nanoseconds: " + (System.nanoTime() - startTime));
         }
-        else {
-            System.out.println("Καποια μεθοδος δεν λειτουργει σωστα, δεν επιστρεφει σωστο αποτελεσμα του πολλαπλασιασμου!");
-            print1D(result1);
-            print1D(result2);
-            print1D(result3);
-            print1D(result4);
-        }
-
-    }
-
-    // χρηση ενος THREAD για υπολογισμο ολοκληρου του πινακα
-    private static int[] oneThreadMult(int[][] matrix, int[] vector, int startRow, int endRow) throws InterruptedException {
-        RowByVectorMultiplicationThread thread1 = new RowByVectorMultiplicationThread("Thread_1", matrix, vector, startRow, endRow);
-        // ξεκιναει η εκτελεση του thread
-        thread1.start();
-        // περιμενουμε το Thread να "πεθανει"/τελειωσει την εκτελεση του
-        thread1.join();
-        // επιστρεφει το αποτελεσμα
-        return thread1.getResultVector();
-    }
-
-    /*
-    * χρηση 2 THREAD για υπολογισμο του πινακα
-    * o πινακας χωριζεται σε 2 μερη και καθε Thread υπολογιζει το κομματι που του αναλογει
-    * η υλοποιηση ειναι ακριβως ιδια με το 1 Thread, δεν ακολουθει DRY Principle
-    * η περιπτωση των 2 Thread ειναι πολυ απλη για να δημιουργησουμε γενικη περιπτωση
-    * */
-    private static int[] twoThreadMult(int[][] matrix, int[] vector, int startRow, int endRow) throws Exception {
-        RowByVectorMultiplicationThread thread1 = new RowByVectorMultiplicationThread("Thread_1", matrix, vector, startRow, endRow / 2);
-        RowByVectorMultiplicationThread thread2 = new RowByVectorMultiplicationThread("Thread_1", matrix, vector, (endRow / 2), endRow);
-
-        thread1.start();
-        thread2.start();
-        thread1.join();
-        thread2.join();
-
-        int[] arr1 = thread1.getResultVector();
-        int[] arr2 = thread2.getResultVector();
-
-        // ενωση των 2 πινακων/μερων του αποτελεσματος και επιστροφη
-        return Ypoergasia_1.arrayConcat(arr1, arr2);
-    }
-
-    // μεθοδος που δημιουργει 4 Thread και υπολογιζει τις σειρες του πινακα απο StartRow εως EndRow
-    /* generic μεθοδος, χρησιμοποιειται και απο την eightThreadMult μεθοδο */
-    private static int[] fourThreadMult(int[][] matrix, int[] vector, int startRow, int endRow) throws Exception {
-        // συνολικο μηκος γραμμων που θα υπολογισει
-        int len = endRow - startRow;
-        // δηλωση και αρχικοποιηση του πινακα/διανυσμα που θα επιστραφει
-        int[] result = new int[len];
-        // πινακας 4 Thread
-        RowByVectorMultiplicationThread[] ts = new RowByVectorMultiplicationThread[4];
-
-        // start, end = αρχη και τελος καθε τμηματος του πινακα που θα ανατεθει σε Thread για τον υπολογισμο
-        int start = startRow;
-        int end = (startRow + (endRow - startRow + 1)/4);
-        for (int i = 0; i < 4; i++) {
-            // δημιουργια του Thread
-            ts[i] = new RowByVectorMultiplicationThread("Thread" + i, matrix, vector, start, end);
-            // επαναπροσδιορισμος των start, end
-            start = end;
-            end += (endRow - startRow + 1)/4;
-            // εκκινηση λειτουργιας του Thread
-            ts[i].start();
-        }
-
-        // wait for all threads to finish
-        for (int i = 0; i < 4; i++) {
-            ts[i].join();
-        }
-
-        // concat all resutls into 1
-        int[] arr1, arr2, arr3, arr4;
-        arr1 = ts[0].getResultVector();
-        arr2 = ts[1].getResultVector();
-        arr3 = ts[2].getResultVector();
-        arr4 = ts[3].getResultVector();
-
-        return Ypoergasia_1.arrayConcat(Ypoergasia_1.arrayConcat(arr1, arr2), Ypoergasia_1.arrayConcat(arr3, arr4));
-    }
-
-    // χρηση 8 Thread για τον υπολογισμο, χωριζει τον πινακα σε 2 μισα και χρησιμοποιει την fourThreadMult μεθοδο για τον υπολογισμο
-    private static int[] eightThreadMult(int[][] matrix, int[] vector, int startRow, int endRow) throws Exception {
-        int[] arr1 = fourThreadMult(matrix, vector, startRow, endRow / 2);
-        int[] arr2 = fourThreadMult(matrix, vector, (endRow / 2), endRow);
-
-        // ενωση των 2 πινακων/μερων του αποτελεσματος και επιστροφη
-        return Ypoergasia_1.arrayConcat(arr1, arr2);
     }
 
     // HELPER METHODS
@@ -197,12 +132,7 @@ public class Ypoergasia_1 {
                 System.out.print(mat[i][j] + " ");
     }
 
-    // ελεγχει αν οι 4 int arrays περιεχουν ακριβως τα ιδια στοιχεια, με την ιδια σειρα και αρα ειναι ισες!
-    public static boolean equalityCheck (int[] arr1, int[] arr2, int[] arr3, int[] arr4) {
-        return Arrays.equals(arr1, arr2) && Arrays.equals(arr1, arr3) && Arrays.equals(arr1, arr4);
-    }
-
-    // ενωνει 2 πινακες και επιστρεφει 1,
+    // ενωνει 2 πινακες
     public static int[] arrayConcat(int[] arr1, int[] arr2) throws Exception {
         if (arr1.length != arr2.length) throw new Exception("Needs same length Arrays");
 
@@ -212,8 +142,21 @@ public class Ypoergasia_1 {
             arr[i] = arr1[i];
             arr[arr1.length + i] = arr2[i];
         }
-
         return arr;
     }
 
+    // ενωνει 4 πινακες Overloaded method
+    public static int[] arrayConcat(int[] arr1, int[] arr2, int[] arr3, int[] arr4) throws Exception {
+        int[] arr12 = arrayConcat(arr1, arr2);
+        int[] arr34 = arrayConcat(arr3, arr4);
+        return arrayConcat(arr12, arr34);
+    }
+
+    // ενωνει 8 πινακες Overloaded method
+    public static int[] arrayConcat(int[][] arr) throws Exception {
+        if (arr.length != 8) throw new Exception("Wrong int[][] arr size. Needs to be 8.");
+        int[] arr1234 = arrayConcat(arr[0], arr[1], arr[2], arr[3]);
+        int[] arr5678 = arrayConcat(arr[4], arr[5], arr[6], arr[7]);
+        return arrayConcat(arr1234, arr5678);
+    }
 }
