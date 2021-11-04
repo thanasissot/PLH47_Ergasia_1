@@ -2,14 +2,12 @@ package com.company.Ypoergasia_2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ProcessThread extends Thread {
     private final ArrayList<String> lines;
     private final HashMap<Integer, Integer> episodeWordCount = new HashMap<>();
     private final HashMap<String, Integer> locationDialogsCount = new HashMap<>();
     private final HashMap<Integer, HashMap<String, Integer>> characterMostUsedWord = new HashMap<>();
-    private int linesProcessed = 0;
 
     public ProcessThread(ArrayList<String> lines) {
         this.lines = lines;
@@ -50,16 +48,10 @@ public class ProcessThread extends Thread {
                 episode_id = Integer.parseInt(columns[1]);
                 wordCount = Integer.parseInt(columns[8]);
             } catch (NumberFormatException e) {
-//                System.out.println("ParseInt failed on line " + lines.indexOf(list));
                 continue;
             }
-            linesProcessed++;
-
             rawLocationText = columns[6];
             text = columns[7];
-
-            processWordCount(episode_id, wordCount);
-            processLocationDialogsCount(rawLocationText);
 
             /*
              * Bart character id = 8
@@ -67,22 +59,18 @@ public class ProcessThread extends Thread {
              * Marge character id = 1
              * Homer character id = 2
              */
+            // εαν ο χαρακτηρας που εχει το διαλογο ειναι ενας εκ των 4 ζητουμενων κανουμε mapping τις λεξεις
             if (charID == 1 || charID == 2 || charID == 8 || charID == 9) {
                 processCharactersText(charID, text);
             }
-
+            processWordCount(episode_id, wordCount);
+            processLocationDialogsCount(rawLocationText);
         }
-        System.out.println(this.getName() + " processed = " + linesProcessed + " lines.");
     }
 
+    // ΒΟΗΘΗΤΙΚΕΣ ΜΕΘΟΔΟΙ για το mapping των στοιχειων που θελουμε ανα ζητουμε
     private void processWordCount(int episode_id, int wordCount) {
-        if (episodeWordCount.containsKey(episode_id)) {
-            if (episodeWordCount.get(episode_id) < wordCount) {
-                episodeWordCount.put(episode_id, wordCount);
-            }
-        } else {
-            episodeWordCount.put(episode_id, wordCount);
-        }
+        episodeWordCount.put(episode_id, episodeWordCount.getOrDefault(episode_id, 0) + wordCount);
     }
 
     private void processLocationDialogsCount(String rawLocationText) {
@@ -100,11 +88,7 @@ public class ProcessThread extends Thread {
                 }
 
                 HashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
-                if (tempList.containsKey(word)) {
-                    tempList.put(word, tempList.get(word) + 1);
-                } else {
-                    tempList.put(word, 1);
-                }
+                tempList.put(word, tempList.getOrDefault(word, 0) + 1);
             }
         }
     }

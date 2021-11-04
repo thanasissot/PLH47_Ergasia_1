@@ -1,4 +1,4 @@
-package com.company.Ypoergasia_2;
+package com.company.Ypoergasia_2.Concurrent;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

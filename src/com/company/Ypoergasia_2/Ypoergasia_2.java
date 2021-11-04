@@ -3,21 +3,19 @@ package com.company.Ypoergasia_2;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class Ypoergasia_2 {
 
     public static void main(String[] args) throws Exception {
         // csv data as list of lists
         List<String> lines = Ypoergasia_2.simpsonsScriptLines("\\externalFiles\\simpsons_script_lines.csv");
-        System.out.println("Loaded " + lines.size() + " lines");
+        System.out.println("Loaded " + lines.size() + " lines\n");
         // μεταβλητες
         long startTime;
         int THREADCOUNT; // αριθμος των THREAD
         int batchSize;
         int start;
         int end;
-
 
         // for loop για τις 4 περιπτωσεις χρησης Thread, 1,2,4,8
         for (int i = 0; i < 4; i++) {
@@ -62,9 +60,7 @@ public class Ypoergasia_2 {
             for (ProcessThread thread : ts){
                 //
                 thread.getEpisodeWordCount().forEach((episodeID, wordCount) -> {
-                    if (episodeWordCount.getOrDefault(episodeID, 0) <= wordCount){
-                        episodeWordCount.put(episodeID, wordCount);
-                    }
+                    episodeWordCount.put(episodeID, episodeWordCount.getOrDefault(episodeID, 0) + wordCount);
                 });
                 //
                 thread.getLocationDialogsCount().forEach((rawLocationText, dialogsCount) -> {
@@ -81,8 +77,6 @@ public class Ypoergasia_2 {
                 });
             }
 
-
-//
             int[] arr = episodeIdWordCount(episodeWordCount);
             System.out.println("Episode ID with most words is " + arr[0] + ". Number of words is " + arr[1]);
 
@@ -94,7 +88,7 @@ public class Ypoergasia_2 {
                 System.out.println(charA[0] + " used the word \"" + charA[1] + "\" " + charA[2] + " times.");
             }
 
-            System.out.println("#" + THREADCOUNT + " Threads End time = " + (System.nanoTime() - startTime));
+            System.out.println("#" + THREADCOUNT + " Threads Total Run time = " + (System.nanoTime() - startTime));
             System.out.println();
         }
 
@@ -133,7 +127,7 @@ public class Ypoergasia_2 {
         return new int[]{episodeID, max};
     }
 
-    // ψαχνει και επιστρεφει την τοποθεσια οπου ελαβαν χωρα οι περισσοτερο διαλογοι
+    // ψαχνει και επιστρεφει την τοποθεσια οπου ελαβαν χωρα οι περισσοτεροι διαλογοι
     private static String[] locationWithMostDialogs(HashMap<String, Integer> map) {
         String rawLocationText = "";
         int max = 0;
@@ -170,7 +164,7 @@ public class Ypoergasia_2 {
                     }
                 }
 
-            } else throw new Exception("Something went wrong BRO in charactersMostUsedWord method!");
+            } else throw new Exception("Something went wrong in charactersMostUsedWord method!");
 
             // character name
             results[charNamesIndex][0] = charNames[charNamesIndex];
@@ -182,7 +176,5 @@ public class Ypoergasia_2 {
 
         return results;
     }
-
-
 }
 

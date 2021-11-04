@@ -1,4 +1,4 @@
-package com.company.Ypoergasia_2;
+package com.company.Ypoergasia_2.Concurrent;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
