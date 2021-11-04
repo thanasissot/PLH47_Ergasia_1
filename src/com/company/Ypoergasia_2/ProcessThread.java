@@ -1,21 +1,31 @@
 package com.company.Ypoergasia_2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ProcessThread extends Thread {
     private final ArrayList<String> lines;
-    private final ConcurrentHashMap<Integer, Integer> episodeWordCount;
-    private final ConcurrentHashMap<String, Integer> locationDialogsCount;
-    private final ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> characterMostUsedWord;
+    private final HashMap<Integer, Integer> episodeWordCount = new HashMap<>();
+    private final HashMap<String, Integer> locationDialogsCount = new HashMap<>();
+    private final HashMap<Integer, HashMap<String, Integer>> characterMostUsedWord = new HashMap<>();
     private int linesProcessed = 0;
 
-    public ProcessThread(ArrayList<String> lines, ConcurrentHashMap<Integer, Integer> episodeWordCount, ConcurrentHashMap<String, Integer> locationDialogsCount, ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> characterMostUsedWord) {
+    public ProcessThread(ArrayList<String> lines) {
         this.lines = lines;
-        this.episodeWordCount = episodeWordCount;
-        this.locationDialogsCount = locationDialogsCount;
-        this.characterMostUsedWord = characterMostUsedWord;
         System.out.println(this.getName() + " processing " + lines.size() + " lines");
+    }
+
+    public HashMap<Integer, Integer> getEpisodeWordCount() {
+        return episodeWordCount;
+    }
+
+    public HashMap<String, Integer> getLocationDialogsCount() {
+        return locationDialogsCount;
+    }
+
+    public HashMap<Integer, HashMap<String, Integer>> getCharacterMostUsedWord() {
+        return characterMostUsedWord;
     }
 
     @Override
@@ -86,10 +96,10 @@ public class ProcessThread extends Thread {
         for (String word : words) {
             if (word.length() >= 5) {
                 if (!characterMostUsedWord.containsKey(charID)){
-                    characterMostUsedWord.put(charID, new ConcurrentHashMap<>());
+                    characterMostUsedWord.put(charID, new HashMap<>());
                 }
 
-                ConcurrentHashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
+                HashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
                 if (tempList.containsKey(word)) {
                     tempList.put(word, tempList.get(word) + 1);
                 } else {

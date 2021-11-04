@@ -11,23 +11,16 @@ public class Ypoergasia_2 {
         // csv data as list of lists
         List<String> lines = Ypoergasia_2.simpsonsScriptLines("\\externalFiles\\simpsons_script_lines.csv");
         System.out.println("Loaded " + lines.size() + " lines");
+        // μεταβλητες
         long startTime;
         int THREADCOUNT; // αριθμος των THREAD
         int batchSize;
         int start;
         int end;
-        ConcurrentHashMap<Integer, Integer> episodeWordCount;
-        ConcurrentHashMap<String, Integer> locationDialogsCount;
-        ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> characterMostUsedWord;
+
 
         // for loop για τις 4 περιπτωσεις χρησης Thread, 1,2,4,8
         for (int i = 0; i < 4; i++) {
-            episodeWordCount = new ConcurrentHashMap<>();
-            locationDialogsCount = new ConcurrentHashMap<>();
-            characterMostUsedWord = new ConcurrentHashMap<>();
-
-            if (i != 0 && i != 1) continue;
-
             // υπολογισμος αριθμου Thread
             THREADCOUNT = (int) Math.pow(2, i);  // 1, 2, 4, 8
             startTime = System.nanoTime();
@@ -44,7 +37,7 @@ public class Ypoergasia_2 {
                     end = lines.size();
                 }
                 // δημιουργια του Thread
-                ts[j] = new ProcessThread(new ArrayList<>(lines.subList(start, end)), episodeWordCount, locationDialogsCount, characterMostUsedWord);
+                ts[j] = new ProcessThread(new ArrayList<>(lines.subList(start, end)));
                 // εκκινηση λειτουργιας του Thread
                 ts[j].start();
 
@@ -62,6 +55,34 @@ public class Ypoergasia_2 {
                 }
             }
 
+            final HashMap<Integer, Integer> episodeWordCount = new HashMap<>();
+            final HashMap<String, Integer>locationDialogsCount = new HashMap<>();
+            final HashMap<Integer, HashMap<String, Integer>> characterMostUsedWord = new HashMap<>();
+            // merge different thread results
+            for (ProcessThread thread : ts){
+                //
+                thread.getEpisodeWordCount().forEach((episodeID, wordCount) -> {
+                    if (episodeWordCount.getOrDefault(episodeID, 0) <= wordCount){
+                        episodeWordCount.put(episodeID, wordCount);
+                    }
+                });
+                //
+                thread.getLocationDialogsCount().forEach((rawLocationText, dialogsCount) -> {
+                    locationDialogsCount.put(rawLocationText, locationDialogsCount.getOrDefault(rawLocationText, 0) + dialogsCount);
+                });
+                //
+                thread.getCharacterMostUsedWord().forEach((charID, map) -> {
+                    if (!characterMostUsedWord.containsKey(charID)){
+                        characterMostUsedWord.put(charID, new HashMap<>());
+                    }
+                    map.forEach((word, count) -> {
+                        characterMostUsedWord.get(charID).put(word, characterMostUsedWord.get(charID).getOrDefault(word, 0) + count);
+                    });
+                });
+            }
+
+
+//
             int[] arr = episodeIdWordCount(episodeWordCount);
             System.out.println("Episode ID with most words is " + arr[0] + ". Number of words is " + arr[1]);
 
@@ -99,7 +120,7 @@ public class Ypoergasia_2 {
 
     // helper methods
     // ψαχνει και επιστρεφει το επεισοδιο με το μεγαλυτερο πληθος λεξεων
-    private static int[] episodeIdWordCount(ConcurrentHashMap<Integer, Integer> map) {
+    private static int[] episodeIdWordCount(HashMap<Integer, Integer> map) {
         int episodeID = -1;
         int max = 0;
         for (int key : map.keySet()) {
@@ -113,7 +134,7 @@ public class Ypoergasia_2 {
     }
 
     // ψαχνει και επιστρεφει την τοποθεσια οπου ελαβαν χωρα οι περισσοτερο διαλογοι
-    private static String[] locationWithMostDialogs(ConcurrentHashMap<String, Integer> map) {
+    private static String[] locationWithMostDialogs(HashMap<String, Integer> map) {
         String rawLocationText = "";
         int max = 0;
 
@@ -129,7 +150,7 @@ public class Ypoergasia_2 {
 
     // ψαχνει και επιστρεφει για καθε χαρακτηρα εκ των 4 ζητουμενων, την πιο χρησιμοποιημενη λεξη τους καθως
     // και τον αριθμο των φορων που την χρησιμοποιησαν
-    private static String[][] charactersMostUsedWord(ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> map) throws Exception {
+    private static String[][] charactersMostUsedWord(HashMap<Integer, HashMap<String, Integer>> map) throws Exception {
         String[][] results = new String[4][3];
         String[] charNames = new String[]{"Marge", "Homer", "Bart", "Lisa"};
         int charNamesIndex = 0;
@@ -140,7 +161,7 @@ public class Ypoergasia_2 {
             int wordCount = 0;
 
             if (map.containsKey(i)) {
-                ConcurrentHashMap<String, Integer> wordsMap = map.get(i);
+                HashMap<String, Integer> wordsMap = map.get(i);
 
                 for (String word : wordsMap.keySet()) {
                     if (wordsMap.get(word) >= wordCount) {
