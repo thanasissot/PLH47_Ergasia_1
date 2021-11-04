@@ -1,33 +1,20 @@
 package com.company.Ypoergasia_2;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ProcessThread extends Thread {
-    private final List<List<String>> lines;
-    private final HashMap<Integer, Integer> episodeWordCount = new HashMap<>();
-    private final HashMap<String, Integer> locationDialogsCount = new HashMap<>();
-    private final HashMap<Integer, HashMap<String, Integer>> characterMostUsedWord = new HashMap<>();
-    private static final int[] charIDs = {1, 2, 8, 9};
+    private final ArrayList<String> lines;
+    private final ConcurrentHashMap<Integer, Integer> episodeWordCount;
+    private final ConcurrentHashMap<String, Integer> locationDialogsCount;
+    private final ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> characterMostUsedWord;
+    private int linesProcessed = 0;
 
-    public static int[] getCharIDs() {
-        return charIDs;
-    }
-
-    public HashMap<Integer, Integer> getEpisodeWordCount() {
-        return episodeWordCount;
-    }
-
-    public HashMap<String, Integer> getLocationDialogsCount() {
-        return locationDialogsCount;
-    }
-
-    public HashMap<Integer, HashMap<String, Integer>> getCharacterMostUsedWord() {
-        return characterMostUsedWord;
-    }
-
-    public ProcessThread(List<List<String>> lines) {
+    public ProcessThread(ArrayList<String> lines, ConcurrentHashMap<Integer, Integer> episodeWordCount, ConcurrentHashMap<String, Integer> locationDialogsCount, ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> characterMostUsedWord) {
         this.lines = lines;
+        this.episodeWordCount = episodeWordCount;
+        this.locationDialogsCount = locationDialogsCount;
+        this.characterMostUsedWord = characterMostUsedWord;
         System.out.println(this.getName() + " processing " + lines.size() + " lines");
     }
 
@@ -36,32 +23,33 @@ public class ProcessThread extends Thread {
         int episode_id;
         int wordCount;
         int charID;
-        String raw_location_text;
+        String rawLocationText;
         String text;
 
-        // αρχικοποιηση των HashMap μεσα στο characterMostUsedWord
-        createInnerListsOfcharacterMostUsedWord();
+        for (String inputLine : lines) {
+            String[] columns = inputLine.split(",");
 
-        for(List<String> list : lines) {
             // skip lines with errors
-            if (list.size() != 9) continue;
-
-            // skip corrupted lines
-            try {
-                charID = Integer.parseInt(list.get(3));
-                episode_id = Integer.parseInt(list.get(1));
-                wordCount = Integer.parseInt(list.get(8));
-            }
-            catch (NumberFormatException e) {
-//                System.out.println("ParseInt failed on line " + lines.indexOf(list));
+            if (columns.length != 9) {
                 continue;
             }
 
-            raw_location_text = list.get(6);
-            text = list.get(7);
+            // skip corrupted lines
+            try {
+                charID = Integer.parseInt(columns[3]);
+                episode_id = Integer.parseInt(columns[1]);
+                wordCount = Integer.parseInt(columns[8]);
+            } catch (NumberFormatException e) {
+//                System.out.println("ParseInt failed on line " + lines.indexOf(list));
+                continue;
+            }
+            linesProcessed++;
+
+            rawLocationText = columns[6];
+            text = columns[7];
 
             processWordCount(episode_id, wordCount);
-            processLocationDialogsCount(raw_location_text);
+            processLocationDialogsCount(rawLocationText);
 
             /*
              * Bart character id = 8
@@ -74,47 +62,37 @@ public class ProcessThread extends Thread {
             }
 
         }
+        System.out.println(this.getName() + " processed = " + linesProcessed + " lines.");
     }
 
-    private void processWordCount (int episode_id, int wordCount) {
-        if (episodeWordCount.containsKey(episode_id)){
-            if (episodeWordCount.get(episode_id) < wordCount){
+    private void processWordCount(int episode_id, int wordCount) {
+        if (episodeWordCount.containsKey(episode_id)) {
+            if (episodeWordCount.get(episode_id) < wordCount) {
                 episodeWordCount.put(episode_id, wordCount);
             }
-        }
-        else {
+        } else {
             episodeWordCount.put(episode_id, wordCount);
         }
     }
 
-    private void processLocationDialogsCount (String raw_location_text) {
-        if (locationDialogsCount.containsKey(raw_location_text)){
-            locationDialogsCount.put(raw_location_text, locationDialogsCount.get(raw_location_text) + 1);
-        }
-        else {
-            locationDialogsCount.put(raw_location_text, 1);
-        }
+    private void processLocationDialogsCount(String rawLocationText) {
+        locationDialogsCount.put(rawLocationText, locationDialogsCount.getOrDefault(rawLocationText, 0) + 1);
     }
 
-    // αρχικοποιηση των HashMap, μας ενδιαφερουν μονο 4 ID, Homer, Marge, Bart, Lisa
-    // εξοικονουμε ενα if ελεγχο σε καθε κληση της processCharactersText
-    private void createInnerListsOfcharacterMostUsedWord () {
-        for (int i : charIDs){
-            characterMostUsedWord.put(i, new HashMap<>());
-        }
-    }
-
-    private void processCharactersText (int charID, String text){
+    private void processCharactersText(int charID, String text) {
         // split text to individual words
         String[] words = text.split(" ");
         // loop through the words Array
         for (String word : words) {
             if (word.length() >= 5) {
-                HashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
+                if (!characterMostUsedWord.containsKey(charID)){
+                    characterMostUsedWord.put(charID, new ConcurrentHashMap<>());
+                }
+
+                ConcurrentHashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
                 if (tempList.containsKey(word)) {
                     tempList.put(word, tempList.get(word) + 1);
-                }
-                else {
+                } else {
                     tempList.put(word, 1);
                 }
             }
