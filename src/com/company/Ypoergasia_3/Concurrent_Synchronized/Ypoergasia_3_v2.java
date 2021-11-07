@@ -1,11 +1,12 @@
-package com.company.Ypoergasia_3;
+package com.company.Ypoergasia_3.Concurrent_Synchronized;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import com.company.Ypoergasia_3.RequestsThread;
+
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class Ypoergasia_3 {
+public class Ypoergasia_3_v2 {
     private static final DecimalFormat df = new DecimalFormat("0.0000");
 
     /**
@@ -34,15 +35,19 @@ public class Ypoergasia_3 {
 
         int THREADCOUNT;
         long startTime;
+        List<Integer> lengths;
+        ConcurrentHashMap<Character, Integer> characterIntegerConcurrentHashMap;
         // for loop για τις 4 περιπτωσεις χρησης Thread, 1,2,4,8
         for (int i = 0; i < 4; i++) {
+            lengths =  Collections.synchronizedList(new ArrayList<>());
+            characterIntegerConcurrentHashMap = new ConcurrentHashMap<>();
             // υπολογισμος αριθμου Thread
             THREADCOUNT = (int) Math.pow(2, i);  // 1, 2, 4, 8
-            RequestsThread[] ts = new RequestsThread[THREADCOUNT];
+            RequestsThread_v2[] ts = new RequestsThread_v2[THREADCOUNT];
             startTime = System.nanoTime();
 
             for (int j = 0; j < THREADCOUNT; j++){
-                ts[j] = new RequestsThread(k, urlString);
+                ts[j] = new RequestsThread_v2(characterIntegerConcurrentHashMap, lengths, k, urlString);
                 ts[j].start();
             }
 
@@ -55,29 +60,9 @@ public class Ypoergasia_3 {
                 }
             }
 
-            // combine all results to one
-            int sum = 0;
-            int count = 0;
-            HashMap<Character, Integer> characterStringHashMap = new HashMap<>();
-            for (RequestsThread rts : ts) {
-                // sum all integers from the Threads returned Lists
-                // while counting number of entries so we can calculate the avg length of all
-                // words we received from the API
-                List<Integer> tempList = rts.getLengths();
-                count += tempList.size();
-                sum += tempList.stream().reduce(0, Integer::sum);
-                // sum all the mappings from the Threads in a whole one so we can provide percentage
-                HashMap<Character, Integer> tempMap = rts.getCharacterMap();
-                for (char character : tempMap.keySet()) {
-                    if (characterStringHashMap.containsKey(character)){
-                        characterStringHashMap.put(character, characterStringHashMap.get(character) + tempMap.get(character));
-                    }
-                    else {
-                        characterStringHashMap.put(character, tempMap.get(character));
-                    }
+            int sum = lengths.stream().reduce(0, Integer::sum);
+            int count = lengths.size();
 
-                }
-            }
             System.out.println("Total time for " + THREADCOUNT + " number of Threads used is " + (System.nanoTime() - startTime));
 
             // souting avg length
@@ -85,9 +70,9 @@ public class Ypoergasia_3 {
 
             // appearance percentage of each character is the the division of characters appearance by the total number of all characters
             System.out.println("Percentage appearance of each character:");
-            SortedSet<Character> keys = new TreeSet<>(characterStringHashMap.keySet());
+            SortedSet<Character> keys = new TreeSet<>(characterIntegerConcurrentHashMap.keySet());
             for (char character : keys) {
-                System.out.println(character + " = " + df.format(100*(characterStringHashMap.get(character) /(double) sum)) + "%");
+                System.out.println(character + " = " + df.format(100*(characterIntegerConcurrentHashMap.get(character) /(double) sum)) + "%");
             }
 
         }
