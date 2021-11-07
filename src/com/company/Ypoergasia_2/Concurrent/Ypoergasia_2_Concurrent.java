@@ -72,7 +72,7 @@ public class Ypoergasia_2_Concurrent {
                 System.out.println(charA[0] + " used the word \"" + charA[1] + "\" " + charA[2] + " times.");
             }
 
-            System.out.println("#" + THREADCOUNT + " Threads End time = " + (System.nanoTime() - startTime));
+            System.out.println("#" + THREADCOUNT + " Threads total elapsed time = " + (System.nanoTime() - startTime));
             System.out.println();
         }
 

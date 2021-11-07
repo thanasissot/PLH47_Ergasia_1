@@ -66,17 +66,11 @@ public class ProcessThreadConcurrent extends Thread {
     }
 
     private void processWordCount(int episode_id, int wordCount) {
-        if (episodeWordCount.containsKey(episode_id)) {
-            if (episodeWordCount.get(episode_id) < wordCount) {
-                episodeWordCount.put(episode_id, wordCount);
-            }
-        } else {
-            episodeWordCount.put(episode_id, wordCount);
-        }
+        episodeWordCount.merge(episode_id, wordCount, Integer::sum);
     }
 
     private void processLocationDialogsCount(String rawLocationText) {
-        locationDialogsCount.put(rawLocationText, locationDialogsCount.getOrDefault(rawLocationText, 0) + 1);
+        locationDialogsCount.merge(rawLocationText, 1, Integer::sum);
     }
 
     private void processCharactersText(int charID, String text) {
@@ -90,11 +84,7 @@ public class ProcessThreadConcurrent extends Thread {
                 }
 
                 ConcurrentHashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
-                if (tempList.containsKey(word)) {
-                    tempList.put(word, tempList.get(word) + 1);
-                } else {
-                    tempList.put(word, 1);
-                }
+                tempList.merge(word, 1, Integer::sum);
             }
         }
     }
