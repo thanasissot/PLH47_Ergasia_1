@@ -69,7 +69,7 @@ public class RequestsThread extends Thread{
             Matcher matcher = pattern.matcher(stringBuilder);
             // for every word in Response
             while (matcher.find()){
-                word = matcher.group();
+                word = matcher.group().toLowerCase();
                 // store word length
                 lengths.add(word.length());
                 // map words characters
