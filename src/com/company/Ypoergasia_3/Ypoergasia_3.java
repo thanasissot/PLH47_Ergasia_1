@@ -85,6 +85,7 @@ public class Ypoergasia_3 {
 
             // appearance percentage of each character is the the division of characters appearance by the total number of all characters
             System.out.println("Percentage appearance of each character:");
+            // using a SortedSet to sort Character Keys for printing in correct order
             SortedSet<Character> keys = new TreeSet<>(characterStringHashMap.keySet());
             for (char character : keys) {
                 System.out.println(character + " = " + df.format(100*(characterStringHashMap.get(character) /(double) sum)) + "%");

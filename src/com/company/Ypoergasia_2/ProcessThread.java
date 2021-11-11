@@ -42,16 +42,16 @@ public class ProcessThread extends Thread {
                 continue;
             }
 
+            text = columns[7];
             // skip corrupted lines
             try {
                 charID = Integer.parseInt(columns[3]);
                 episode_id = Integer.parseInt(columns[1]);
-                wordCount = Integer.parseInt(columns[8]);
+                wordCount = text.split(" ").length;
             } catch (NumberFormatException e) {
                 continue;
             }
             rawLocationText = columns[6];
-            text = columns[7];
 
             /*
              * Bart character id = 8
