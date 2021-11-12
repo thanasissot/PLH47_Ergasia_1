@@ -7,12 +7,12 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class ClothingShop {
     // change this variable to speed up times, its used as a denominator like 5000millis / universalTimeReduce = 500 if universalTimeReduce = 10
-    static int universalTimeReduce = 10;
+    static int universalTimeReduce = 20;
     // used to assign SEX to customere
     enum SEX {MEN, WOMEN}
     static SEX[] SEX_INDEXED = SEX.values();
     // Semaphores and their permits int, all initialized with
-    static Semaphore totalCustomers = new Semaphore(40, true);
+    static Semaphore totalCustomers = new Semaphore(40);
     static Semaphore mensFittingRoom = new Semaphore(5, true);
     static Semaphore womensFittingRoom = new Semaphore(5, true);
     static Semaphore registerLine = new Semaphore(10, true);
@@ -47,7 +47,7 @@ public class ClothingShop {
                 if (!customers.isEmpty()) {
                     // first in line is the one completing his shopping, 5 seconds and after release him
                     try {
-                        Thread.sleep((5000)/universalTimeReduce); // 5 seconds to shopping completion
+                        Thread.sleep((5000/universalTimeReduce)); // 5 seconds to shopping completion
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -57,6 +57,14 @@ public class ClothingShop {
                     // releasing semaphore permits, the customer leaving the store and the register line
                     registerLine.release();
                     totalCustomers.release();
+                }
+                // used this to let the thread sleep or else it always finds Customers Queue as empty
+                else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -124,7 +132,6 @@ public class ClothingShop {
             this.womensFittingRoom = womensFittingRoom;
             this.registerLine = registerLine;
             this.customers = customers;
-//            this.fittingRoomTime = ThreadLocalRandom.current().nextInt(3, 11); // assign random fitting room time
             this.sex = SEX_INDEXED[ThreadLocalRandom.current().nextInt(0, 2)]; //  randomly assign SEX
         }
 
