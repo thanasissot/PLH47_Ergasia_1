@@ -8,8 +8,20 @@ public class Ypoergasia_2 {
 
     public static void main(String[] args) throws Exception {
         // csv data as list of lists
-        List<String> lines = Ypoergasia_2.simpsonsScriptLines("\\externalFiles\\simpsons_script_lines.csv");
-        System.out.println("Loaded " + lines.size() + " lines\n");
+        String relativePath;
+        if (args.length != 0){
+            relativePath = args[0];
+        }else {
+            relativePath = "\\externalFiles\\simpsons_script_lines.csv";
+        }
+        List<String> lines = Ypoergasia_2.simpsonsScriptLines(relativePath);
+        if (lines.size() != 0) {
+            System.out.println("Loaded " + lines.size() + " lines\n");
+        }
+        else {
+            System.out.println("No file loaded. End!");
+            System.exit(-1);
+        }
         // μεταβλητες
         long startTime;
         int THREADCOUNT; // αριθμος των THREAD
