@@ -1,9 +1,13 @@
 package com.company.Ypoergasia_1;
 
+import java.text.DecimalFormat;
 import java.util.Random;
 
 public class Ypoergasia_1 {
-    //  ΠΑΡΑΔΟΧΗ  n, m, k δυναμεις του 2, (ΟΔΗΓΙΑ ΣΕΠ => δεν χρειαζεται αμυντικος προγραμματισμος)
+    // formats time string, uesd when printing to console
+    static DecimalFormat formatter = new DecimalFormat("#,###");
+
+    //  n, m, k are powers of 2 as instructed by SEP. also no need for Amyntikos Programmatismos, very minimum coded in
     public static void main(String[] args) throws Exception {
         int[][] matrix;
         int[] vector;
@@ -12,59 +16,57 @@ public class Ypoergasia_1 {
         int[] result;
 
         if (args.length == 0){
-            // εαν δεν υπαρχουν εισερχομενα δεδομενα δινουμε μια τυχαια δυναμη του 2 απο [12,14]
-            // στις διαστασεις του πινακα και του διανυσματος
+            // if no input arguments give random power of 2 to variables of matrix and vector sizes
             Random rand = new Random();
             n = rand.nextInt(3) + 12;
             m = rand.nextInt(3) + 12;
         }
         else {
-            // αλλιως οτι τιμες εισαγει στο προγραμμα ο χρηστης
+            // else take users inputs, needs to be power of 2
             n = Integer.parseInt(args[0]);
             m = Integer.parseInt(args[1]);
         }
 
-        // δημιουργια του τυχαιου πινακα και διανυσματος
+        // create matrix and vector filled with random integers in instructed ranges
         vector = Ypoergasia_1.getVector((int) Math.pow(2, m));
         matrix = Ypoergasia_1.getMatrix((int) Math.pow(2, n), (int) Math.pow(2, m));
-        // βοηθητικες μεταβλητες
-        int[][] arrs; // κραταει τα αποτελεσματα απο καθε Thread και χρησιμοποιειται για τη συνενωση τους
-        int THREADCOUNT; // αριθμος των THREAD
-        // καθε Thread υπολογιζει απο lo εως hi στοιχειο του συνολικου αποτελεσματος
+        // helper variabls
+        int[][] arrs; // keeps track of results from each different thread and used to put em together at the end
+        int THREADCOUNT; // number of threads
+        // every threads starting and finishing index to calculate
         int lo; //
         int hi; //
 
-        // 4 επαναληψεις μια για καθε περιπτωση αριθμων Threads 1,2,4,8
+        // 4 times loop each for each number of Threads 1,2,4,8
         for (int i = 0; i < 4; i++){
             long startTime = System.nanoTime();
             THREADCOUNT = (int) Math.pow(2,i);  // 1, 2, 4, 8
-            RowByVectorMultiplicationThread[] ts = new RowByVectorMultiplicationThread[THREADCOUNT]; // αρχικοποιηση πινακα RowByVectorMultiplicationThread
+            RowByVectorMultiplicationThread[] ts = new RowByVectorMultiplicationThread[THREADCOUNT]; // initialize matrix for threds
 
-            // βο
             lo = 0;
             hi = matrix.length / THREADCOUNT;
             for (int j = 0; j < THREADCOUNT; j++){
-                // δημιουργια των Thread
+                // create thread
                 ts[j] = new RowByVectorMultiplicationThread("Thread" + (j + 1), matrix, vector, lo, hi);
-                // εκκινηση λειτουργιας του Thread
+                // start thread
                 ts[j].start();
 
-                // επαναπροσδιορισμος ευρους υπολογισμου για το επομενο thread
+                // redefine starting and ending index
                 lo = hi;
                 hi += matrix.length / THREADCOUNT;
             }
 
-            // αρχικοποιηση πινακα πινακων
+            // initialize matrix of results
             arrs = new int[THREADCOUNT][];
 
             // wait for all threads to finish
             for (int j = 0; j < THREADCOUNT; j++) {
                 ts[j].join();
-                // αποθηκευουμε το αποτελεσμα απο καθε thread στον πινακα arrs
+                // save each result to its plce in results matrix arrs
                 arrs[j] = ts[j].getResultVector();
             }
 
-            // αναλογα με τον αριθμο των Thread, γινεται και η καταλληλη συνενωση των αποτελεσματων σε 1 τελικο αποτελεσμα result
+            // depending on number of threads used merge results
             switch (THREADCOUNT){
                 case 1:
                     result = arrs[0];
@@ -82,9 +84,9 @@ public class Ypoergasia_1 {
             totalTimes[i] = (System.nanoTime() - startTime);
         }
 
-        // εκτυπωση τελικων χρονων
+        // print times
         for (int i = 0; i < 4; i++){
-            System.out.println("Number of threads: " + (int) Math.pow(2,i) +". Elapsed time after putting together results in nanoseconds: " + totalTimes[i]);
+            System.out.println("Number of threads: " + (int) Math.pow(2,i) +". Elapsed time after putting together results in nanoseconds: " + formatter.format(totalTimes[i]));
         }
     }
 
@@ -135,12 +137,12 @@ public class Ypoergasia_1 {
                 System.out.print(mat[i][j] + " ");
     }
 
-    // ενωνει 2 πινακες
+    // concant 2 matrixes, one dimension each
     public static int[] arrayConcat(int[] arr1, int[] arr2) throws Exception {
         if (arr1.length != arr2.length) throw new Exception("Needs same length Arrays");
 
         int[] arr = new int[arr1.length * 2];
-        // ενωση των 2 πινακων/μερων του αποτελεσματος και επιστροφη
+        // merge two matrixes and return
         for (int i = 0; i < arr1.length; i++) {
             arr[i] = arr1[i];
             arr[arr1.length + i] = arr2[i];
@@ -148,7 +150,7 @@ public class Ypoergasia_1 {
         return arr;
     }
 
-    // ενωνει 4 πινακες Overloaded method
+    // concant 4 matrixes, one dimension each, Overloaded method
     public static int[] arrayConcat(int[][] arr) throws Exception {
         if (arr.length == 4) {
             int[] arr12 = arrayConcat(arr[0], arr[1]);
@@ -161,6 +163,53 @@ public class Ypoergasia_1 {
             return arrayConcat(arr1234, arr5678);
         }
         throw new Exception("Wrong size of int[][].");
+    }
+
+
+    public static class RowByVectorMultiplicationThread extends Thread{
+
+        private final int[][] matrix;
+        private final int[] vector;
+        private final int startRow;
+        private final int endRow;
+        private final int[] resultCols;
+
+        public RowByVectorMultiplicationThread(String name, int[][] matrix, int[] vector, int startRow, int endRow) {
+            super(name);
+
+            // endRow needs to be smaller or equal to matrix size - 1
+            if (endRow > matrix.length) throw new ArrayIndexOutOfBoundsException(
+                    "endRow needs to be Matrix.Length - 1 or less"
+            );
+
+            this.matrix = matrix;
+            this.vector = vector;
+            this.startRow = startRow;
+            this.endRow = endRow;
+            // while creating this Thread we now know the number of results this will carry in its resultCols[] so we initialize it here
+            resultCols = new int[endRow - startRow];
+        }
+
+        @Override
+        public void run() {
+            int sum;
+            int index = 0;
+
+            // multiply each row with the vector
+            for (int i = startRow; i < endRow; i++) {
+                sum = 0;
+                for (int j = 0; j < matrix[i].length; j++) {
+                    // multiply each element with each respective to the vector element according to matrix multiply algorithm
+                    sum += (matrix[i][j] * vector[j]);
+                }
+                // save each result
+                resultCols[index++] = sum;
+            }
+        }
+
+        public int[] getResultVector() {
+            return resultCols;
+        }
     }
 
 }

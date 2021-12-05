@@ -1,12 +1,19 @@
 package com.company.Ypoergasia_3;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Ypoergasia_3 {
     private static final DecimalFormat df = new DecimalFormat("0.0000");
+    // formats time string, uesd when printing to console
+    static DecimalFormat formatter = new DecimalFormat("#,###");
 
     /**
      * args[0] = API url to sent GET REQUEST
@@ -34,9 +41,9 @@ public class Ypoergasia_3 {
 
         int THREADCOUNT;
         long startTime;
-        // for loop για τις 4 περιπτωσεις χρησης Thread, 1,2,4,8
+        // for loop for each number of thread use case: Thread's 1,2,4,8
         for (int i = 0; i < 4; i++) {
-            // υπολογισμος αριθμου Thread
+            // calculate Thread Number
             THREADCOUNT = (int) Math.pow(2, i);  // 1, 2, 4, 8
             RequestsThread[] ts = new RequestsThread[THREADCOUNT];
             startTime = System.nanoTime();
@@ -78,7 +85,7 @@ public class Ypoergasia_3 {
 
                 }
             }
-            System.out.println("Total time for " + THREADCOUNT + " number of Threads used is " + (System.nanoTime() - startTime));
+            System.out.println("Total time for " + THREADCOUNT + " number of Threads used is " + formatter.format(System.nanoTime() - startTime) + " nanoseconds");
 
             // souting avg length
             System.out.println("Average word length of " + "k calls by " + THREADCOUNT + " Threads, is " + sum/(double)count);
@@ -91,6 +98,76 @@ public class Ypoergasia_3 {
                 System.out.println(character + " = " + df.format(100*(characterStringHashMap.get(character) /(double) sum)) + "%");
             }
 
+        }
+    }
+
+    public static class RequestsThread extends Thread{
+        private final HashMap<Character, Integer> characterMap = new HashMap<>();
+        private final List<Integer> lengths =  new ArrayList<>();
+        private final int apiCallsCount;
+        private final URL url;
+
+        public HashMap<Character, Integer> getCharacterMap() {
+            return characterMap;
+        }
+
+        public List<Integer> getLengths() {
+            return lengths;
+        }
+
+        public RequestsThread(int apiCallsCount, String url) throws MalformedURLException {
+            this.apiCallsCount = apiCallsCount;
+            this.url = new URL(url);
+        }
+
+        @Override
+        public void run() {
+            StringBuilder stringBuilder = new StringBuilder();
+            BufferedReader input;
+            String inputline;
+            String word;
+
+            // K (= apiCallsCount) requests sent
+            for (int i = 0; i < apiCallsCount; i++){
+                // get String from Response body, append it to StringBuilder
+                try {
+                    // creating Connection
+                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                    // set Https Request Method to GET
+                    con.setRequestMethod("GET");
+                    // if request was successfull response code is 200
+                    if (con.getResponseCode() == 200){
+                        // get the input stream and append it line by line to StringBuilder
+                        input = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                        while ((inputline = input.readLine()) != null) {
+                            stringBuilder.append(inputline);
+                        }
+                        // close BufferedReader
+                        input.close();
+                    }
+                    // ELSE null, wrong response code is like an empty text, so do nothing
+                }
+                catch (Exception e){
+                    continue;
+                }
+
+                // use the StringBuilder to extract all words, while adding the lengts of each word
+                // in an List<Integer> to calculate avg, and also mapping each word to characters
+                // using Patter and Matcher, Regex
+                Pattern pattern = Pattern.compile("(\\w+)");
+                // getting all words from StringBuilder by matching the above Pattern
+                Matcher matcher = pattern.matcher(stringBuilder);
+                // for every word in Response
+                while (matcher.find()){
+                    word = matcher.group().toLowerCase();
+                    // store word length
+                    lengths.add(word.length());
+                    // map words characters
+                    for (char character : word.toCharArray()){
+                        characterMap.put(character, characterMap.getOrDefault(character, 0) + 1);
+                    }
+                }
+            }
         }
     }
 }

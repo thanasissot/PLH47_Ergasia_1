@@ -59,7 +59,7 @@ public class ProcessThread extends Thread {
              * Marge character id = 1
              * Homer character id = 2
              */
-            // εαν ο χαρακτηρας που εχει το διαλογο ειναι ενας εκ των 4 ζητουμενων κανουμε mapping τις λεξεις
+            // if character is one of those 4 we map the words, else pass
             if (charID == 1 || charID == 2 || charID == 8 || charID == 9) {
                 processCharactersText(charID, text);
             }
@@ -68,7 +68,7 @@ public class ProcessThread extends Thread {
         }
     }
 
-    // ΒΟΗΘΗΤΙΚΕΣ ΜΕΘΟΔΟΙ για το mapping των στοιχειων που θελουμε ανα ζητουμε
+    // HELPER METHODS
     private void processWordCount(int episode_id, int wordCount) {
         episodeWordCount.put(episode_id, episodeWordCount.getOrDefault(episode_id, 0) + wordCount);
     }

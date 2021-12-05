@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ClothingShop {
+public class Ypoergasia_4 {
     // change this variable to speed up times, its used as a denominator like 5000millis / universalTimeReduce = 500 if universalTimeReduce = 10
     static int universalTimeReduce = 20;
     // used to assign SEX to customere
@@ -137,10 +137,10 @@ public class ClothingShop {
 
         @Override
         public void run() {
-            // επιβαλει την υπαρξη 40 ατομων στο καταστημα, πρεπει να ο 1ος απο την ουρα του ταμειου για να συνεχισει ο επομενος
+            // imposes maximum of 40 customers inside the store, 1st customer in front of the register line must finish so the next person can enter
             totalCustomers.acquireUninterruptibly();
             System.out.println("Customer" + custID + " entered the store.");
-            // αναλογα με το φυλο του Customer παιρνει permit στο αντιστοιχο δοκιμαστηριο
+            // depending on the sex of the Customer he gets a permit in his respective dressing Room
             if (this.sex.equals(SEX.MEN)) {
                 mensFittingRoom.acquireUninterruptibly();
             } else {

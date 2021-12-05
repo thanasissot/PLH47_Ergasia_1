@@ -2,15 +2,9 @@ package com.company.Ypoergasia_2;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-public class Ypoergasia_2 {
-
-    // formats time string, uesd when printing to console
-    static DecimalFormat formatter = new DecimalFormat("#,###");
+public class Ypoergasia_2_0version {
 
     public static void main(String[] args) throws Exception {
         // csv data as list of lists
@@ -18,9 +12,9 @@ public class Ypoergasia_2 {
         if (args.length != 0){
             relativePath = args[0];
         }else {
-            relativePath = "\\simpsons_script_lines.csv";
+            relativePath = "\\externalFiles\\simpsons_script_lines.csv";
         }
-        List<String> lines = Ypoergasia_2.simpsonsScriptLines(relativePath);
+        List<String> lines = Ypoergasia_2_0version.simpsonsScriptLines(relativePath);
         if (lines.size() != 0) {
             System.out.println("Loaded " + lines.size() + " lines\n");
         }
@@ -106,7 +100,7 @@ public class Ypoergasia_2 {
                 System.out.println(charA[0] + " used the word \"" + charA[1] + "\" " + charA[2] + " times.");
             }
 
-            System.out.println("#" + THREADCOUNT + " Threads Total Run time = " + formatter.format(System.nanoTime() - startTime));
+            System.out.println("#" + THREADCOUNT + " Threads Total Run time = " + (System.nanoTime() - startTime));
             System.out.println();
         }
 
@@ -193,97 +187,5 @@ public class Ypoergasia_2 {
 
         return results;
     }
-
-
-    static class ProcessThread extends Thread {
-        private final ArrayList<String> lines;
-        private final HashMap<Integer, Integer> episodeWordCount = new HashMap<>();
-        private final HashMap<String, Integer> locationDialogsCount = new HashMap<>();
-        private final HashMap<Integer, HashMap<String, Integer>> characterMostUsedWord = new HashMap<>();
-
-        public ProcessThread(ArrayList<String> lines) {
-            this.lines = lines;
-            System.out.println(this.getName() + " processing " + lines.size() + " lines");
-        }
-
-        public HashMap<Integer, Integer> getEpisodeWordCount() {
-            return episodeWordCount;
-        }
-
-        public HashMap<String, Integer> getLocationDialogsCount() {
-            return locationDialogsCount;
-        }
-
-        public HashMap<Integer, HashMap<String, Integer>> getCharacterMostUsedWord() {
-            return characterMostUsedWord;
-        }
-
-        @Override
-        public void run() {
-            int episode_id;
-            int wordCount;
-            int charID;
-            String rawLocationText;
-            String text;
-
-            for (String inputLine : lines) {
-                String[] columns = inputLine.split(",");
-
-                // skip lines with errors
-                if (columns.length != 9) {
-                    continue;
-                }
-
-                text = columns[7];
-                // skip corrupted lines
-                try {
-                    charID = Integer.parseInt(columns[3]);
-                    episode_id = Integer.parseInt(columns[1]);
-                    wordCount = text.split(" ").length;
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-                rawLocationText = columns[6];
-
-                /*
-                 * Bart character id = 8
-                 * Lisa character id = 9
-                 * Marge character id = 1
-                 * Homer character id = 2
-                 */
-                // if character is one of those 4 we map the words, else pass
-                if (charID == 1 || charID == 2 || charID == 8 || charID == 9) {
-                    processCharactersText(charID, text);
-                }
-                processWordCount(episode_id, wordCount);
-                processLocationDialogsCount(rawLocationText);
-            }
-        }
-
-        // HELPER METHODS
-        private void processWordCount(int episode_id, int wordCount) {
-            episodeWordCount.put(episode_id, episodeWordCount.getOrDefault(episode_id, 0) + wordCount);
-        }
-
-        private void processLocationDialogsCount(String rawLocationText) {
-            locationDialogsCount.put(rawLocationText, locationDialogsCount.getOrDefault(rawLocationText, 0) + 1);
-        }
-
-        private void processCharactersText(int charID, String text) {
-            // split text to individual words
-            String[] words = text.split(" ");
-            // loop through the words Array
-            for (String word : words) {
-                if (word.length() >= 5) {
-                    if (!characterMostUsedWord.containsKey(charID)){
-                        characterMostUsedWord.put(charID, new HashMap<>());
-                    }
-
-                    HashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
-                    tempList.put(word, tempList.getOrDefault(word, 0) + 1);
-                }
-            }
-        }
-
-    }
 }
+
