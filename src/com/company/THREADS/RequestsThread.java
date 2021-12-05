@@ -1,4 +1,4 @@
-package com.company.Ypoergasia_3;
+package com.company.THREADS;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

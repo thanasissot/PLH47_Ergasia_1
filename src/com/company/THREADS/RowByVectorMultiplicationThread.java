@@ -1,4 +1,4 @@
-package com.company.Ypoergasia_1;
+package com.company.THREADS;
 /**
  * Πολλαπλασιαζει γραμμες ενος πινακα με ενα διανυσμα
  * τα αποτελεσματα καθε γραμμης αποθηκευονται στον πινακα resultCols

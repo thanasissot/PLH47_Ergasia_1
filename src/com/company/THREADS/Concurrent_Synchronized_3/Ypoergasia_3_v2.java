@@ -1,6 +1,4 @@
-package com.company.Ypoergasia_3.Concurrent_Synchronized;
-
-import com.company.Ypoergasia_3.RequestsThread;
+package com.company.THREADS.Concurrent_Synchronized_3;
 
 import java.text.DecimalFormat;
 import java.util.*;

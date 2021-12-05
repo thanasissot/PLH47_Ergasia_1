@@ -1,21 +1,29 @@
-package com.company.Ypoergasia_2.Concurrent;
+package com.company.THREADS;
 
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
-public class ProcessThreadConcurrent extends Thread {
+public class ProcessThread extends Thread {
     private final ArrayList<String> lines;
-    private final ConcurrentHashMap<Integer, Integer> episodeWordCount;
-    private final ConcurrentHashMap<String, Integer> locationDialogsCount;
-    private final ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> characterMostUsedWord;
-    private int linesProcessed = 0;
+    private final HashMap<Integer, Integer> episodeWordCount = new HashMap<>();
+    private final HashMap<String, Integer> locationDialogsCount = new HashMap<>();
+    private final HashMap<Integer, HashMap<String, Integer>> characterMostUsedWord = new HashMap<>();
 
-    public ProcessThreadConcurrent(ArrayList<String> lines, ConcurrentHashMap<Integer, Integer> episodeWordCount, ConcurrentHashMap<String, Integer> locationDialogsCount, ConcurrentHashMap<Integer, ConcurrentHashMap<String, Integer>> characterMostUsedWord) {
+    public ProcessThread(ArrayList<String> lines) {
         this.lines = lines;
-        this.episodeWordCount = episodeWordCount;
-        this.locationDialogsCount = locationDialogsCount;
-        this.characterMostUsedWord = characterMostUsedWord;
         System.out.println(this.getName() + " processing " + lines.size() + " lines");
+    }
+
+    public HashMap<Integer, Integer> getEpisodeWordCount() {
+        return episodeWordCount;
+    }
+
+    public HashMap<String, Integer> getLocationDialogsCount() {
+        return locationDialogsCount;
+    }
+
+    public HashMap<Integer, HashMap<String, Integer>> getCharacterMostUsedWord() {
+        return characterMostUsedWord;
     }
 
     @Override
@@ -34,22 +42,16 @@ public class ProcessThreadConcurrent extends Thread {
                 continue;
             }
 
+            text = columns[7];
             // skip corrupted lines
             try {
                 charID = Integer.parseInt(columns[3]);
                 episode_id = Integer.parseInt(columns[1]);
-                wordCount = Integer.parseInt(columns[8]);
+                wordCount = text.split(" ").length;
             } catch (NumberFormatException e) {
-//                System.out.println("ParseInt failed on line " + lines.indexOf(list));
                 continue;
             }
-            linesProcessed++;
-
             rawLocationText = columns[6];
-            text = columns[7];
-
-            processWordCount(episode_id, wordCount);
-            processLocationDialogsCount(rawLocationText);
 
             /*
              * Bart character id = 8
@@ -57,20 +59,22 @@ public class ProcessThreadConcurrent extends Thread {
              * Marge character id = 1
              * Homer character id = 2
              */
+            // if character is one of those 4 we map the words, else pass
             if (charID == 1 || charID == 2 || charID == 8 || charID == 9) {
                 processCharactersText(charID, text);
             }
-
+            processWordCount(episode_id, wordCount);
+            processLocationDialogsCount(rawLocationText);
         }
-        System.out.println(this.getName() + " processed = " + linesProcessed + " lines.");
     }
 
+    // HELPER METHODS
     private void processWordCount(int episode_id, int wordCount) {
-        episodeWordCount.merge(episode_id, wordCount, Integer::sum);
+        episodeWordCount.put(episode_id, episodeWordCount.getOrDefault(episode_id, 0) + wordCount);
     }
 
     private void processLocationDialogsCount(String rawLocationText) {
-        locationDialogsCount.merge(rawLocationText, 1, Integer::sum);
+        locationDialogsCount.put(rawLocationText, locationDialogsCount.getOrDefault(rawLocationText, 0) + 1);
     }
 
     private void processCharactersText(int charID, String text) {
@@ -80,11 +84,11 @@ public class ProcessThreadConcurrent extends Thread {
         for (String word : words) {
             if (word.length() >= 5) {
                 if (!characterMostUsedWord.containsKey(charID)){
-                    characterMostUsedWord.put(charID, new ConcurrentHashMap<>());
+                    characterMostUsedWord.put(charID, new HashMap<>());
                 }
 
-                ConcurrentHashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
-                tempList.merge(word, 1, Integer::sum);
+                HashMap<String, Integer> tempList = characterMostUsedWord.get(charID);
+                tempList.put(word, tempList.getOrDefault(word, 0) + 1);
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.company.Ypoergasia_3.Concurrent_Synchronized;
+package com.company.THREADS.Concurrent_Synchronized_3;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
